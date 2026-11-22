@@ -53,4 +53,17 @@ document.getElementById('claim').onclick=async()=>{
     setTimeout(()=>st('🎉 Claimed! Your badge (with your .ai handle) is minted. Check <a href="https://bscscan.com/address/'+acct+'">BscScan</a>.','ok'),15000);
   }catch(e){st('Error: '+e.message,'err');document.getElementById('claim').disabled=false;}
 };
+
+// --- live social proof ---
+(async()=>{
+  try{
+    const r=await fetch('https://bsc-dataseed.binance.org/',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:C,data:SEL_MINT},'latest']})});
+    const j=await r.json();
+    const n=parseInt(j.result,16);
+    if(n>0){const d=document.querySelector('.card');const s=document.createElement('div');
+      s.style.cssText='margin-top:10px;color:#F0B90B;font-weight:bold';
+      s.textContent='🔥 '+n+' passes already claimed';d.prepend(s);}
+  }catch(e){}
+})();
 </script></body></html>
