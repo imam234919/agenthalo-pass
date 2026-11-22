@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgentHalo Pass — Claim</title>
+<style>
+body{background:#0b0e14;color:#eee;font-family:ui-monospace,monospace;display:flex;flex-direction:column;align-items:center;padding:32px;min-height:100vh}
+h1{color:#F0B90B;font-size:28px}.card{border:1px solid #333;border-radius:12px;padding:24px;margin:16px;max-width:480px;width:100%;background:#11151d}
+button{background:#F0B90B;border:none;color:#111;padding:14px 24px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;width:100%;margin-top:12px}
+button:disabled{opacity:.5;cursor:not-allowed}
+#status{margin-top:14px;font-size:14px;line-height:1.6}.ok{color:#4caf50}.warn{color:#ff9800}.err{color:#f44336}
+code{background:#1a1f2a;padding:2px 6px;border-radius:4px;font-size:12px;word-break:break-all}
+a{color:#F0B90B}.foot{font-size:12px;color:#888;max-width:480px;text-align:center;line-height:1.6}
+</style></head><body>
+<h1>⭕ AgentHalo Pass</h1>
+<p>Free commemorative pass for Binance Agent ID holders</p>
+<div class="card">
+  <button id="connect">Connect Wallet</button>
+  <button id="claim" disabled>Claim my Pass (gas only)</button>
+  <div id="status">Open this page inside the Binance App DApp browser (or any EVM wallet).</div>
+</div>
+<div class="foot">
+  Contract: <code>0x717f802bdbffbb8a054b23dafd5fa63017294eb2</code> (BSC mainnet) ·
+  <a href="https://bscscan.com/address/0x717f802bdbffbb8a054b23dafd5fa63017294eb2#code">verified source</a> ·
+  <a href="https://github.com/imam234919/agenthalo-pass">open source</a><br>
+  One pass per Agent ID holder · value must be 0 · no owner · no fees · not affiliated with Binance
+</div>
+<script>
+const C='0x717f802bdbffbb8a054b23dafd5fa63017294eb2', R='0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F';
+const SEL_CLAIM='0x4e71d92d', SEL_BAL='0x70a08231', SEL_MINT='0x18160ddd';
+const st=(m,c)=>document.getElementById('status').innerHTML='<div class="'+(c||'')+'">'+m+'</div>';
+let acct=null;
+async function rpc(to,data){const p=await window.ethereum.request({method:'eth_call',params:[{to,data},'latest']});return p;}
+document.getElementById('connect').onclick=async()=>{
+  try{
+    if(!window.ethereum){st('No injected wallet found. Open this page in the <b>Binance App → Wallet → DApp browser</b> and paste this URL, or install MetaMask.','warn');return;}
+    const acc=await window.ethereum.request({method:'eth_requestAccounts'});
+    acct=acc[0];
+    const chain=await window.ethereum.request({method:'eth_chainId'});
+    st('Wallet: <code>'+acct+'</code><br>Chain: '+(chain==='0x38'?'BNB Smart Chain ✅':'⚠️ switch to BSC (chain 56)'),'ok');
+    const reg=await rpc(R,SEL_BAL+acct.slice(2).padStart(64,'0'));
+    const has=BigInt(reg)>0n;
+    const own=await rpc(C,SEL_BAL+acct.slice(2).padStart(64,'0'));
+    const claimed=BigInt(own)>0n;
+    if(claimed){st('✅ You already claimed your AgentHalo Pass!','ok');document.getElementById('claim').disabled=true;}
+    else if(has){st('Agent ID detected ✅ — ready to claim.','ok');document.getElementById('claim').disabled=false;}
+    else{st('⚠️ No Agent ID in this wallet. Claim an Agent ID in the Binance Wallet app first, then come back.','warn');document.getElementById('claim').disabled=true;}
+  }catch(e){st('Error: '+e.message,'err');}
+};
+document.getElementById('claim').onclick=async()=>{
+  try{
+    document.getElementById('claim').disabled=true;
+    const tx=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:acct,to:C,data:SEL_CLAIM,value:'0x0'}]});
+    st('Tx sent: <code>'+tx+'</code><br>Waiting for confirmation…','warn');
+    setTimeout(()=>st('🎉 Claimed! Your badge (with your .ai handle) is minted. Check <a href="https://bscscan.com/address/'+acct+'">BscScan</a>.','ok'),15000);
+  }catch(e){st('Error: '+e.message,'err');document.getElementById('claim').disabled=false;}
+};
+</script></body></html>
